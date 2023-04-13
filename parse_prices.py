@@ -19,7 +19,7 @@ def get_price_links(prc_url, prc_ptn):
     Функция принимает ссылку на страницу с прайсами и паттерн для поиска
     ссылок с прайсами. Возвращает список со ссылками на прайсы.
     :param prc_url: Ссылка на страницу 'https://mc.ru/price/msk#'
-    :param prc_ptn: Паттерн ссылки 'https://mc.ru/price/msk#'
+    :param prc_ptn: Паттерн ссылки 'https://mc.ru/prices/'
     :return: Список ссылок.
     """
 
