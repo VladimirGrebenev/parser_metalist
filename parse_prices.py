@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
+import os
 
 price_url = 'https://mc.ru/price/msk#'
 price_pattern = 'https://mc.ru/prices/'
@@ -89,6 +90,9 @@ def parse_tables(t_list):
             mydata.loc[length] = table_row
 
         # Export to csv
+        price_path = './price/'
+        if not os.path.exists(price_path):
+            os.makedirs(price_path)
         mydata.to_csv(fr'./price/{category}', index=False)
 
 
