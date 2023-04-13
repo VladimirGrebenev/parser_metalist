@@ -5,12 +5,16 @@ import requests
 import pandas as pd
 import os
 
+# ссылка на страницу со ссылками на прайсы
 price_url = 'https://mc.ru/price/msk#'
+# паттерн для поиска ссылок на прайсы
 price_pattern = 'https://mc.ru/prices/'
+# процент увеличения цены в прайсе
+percent_up = 1
 
 
 def main():
-    """Главная функция запуска"""
+    """Главная функция запуска сборщика прайсов"""
     price_links_dict = get_price_links(price_url, price_pattern)
     for title, link in price_links_dict.items():
         tables_list = parse_price_link(link)
@@ -33,6 +37,7 @@ def get_price_links(prc_url, prc_ptn):
     soup_links = soup.find('ul', class_='pagePriceList').find_all('a')[2:-1]
 
     prc_links = []
+    # названия главных категорий / названия ссылок
     title_links = []
 
     for title in soup_links_titles:
@@ -62,26 +67,11 @@ def parse_price_link(link):
     response = requests.get(price_link)
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    # создаём название главной категории
-    # m_cat = []
-    # for content in soup.select('h1'):
-    #     content.span.decompose()
-    #     m_cat.append(content.text)
-    #
-    # if len(m_cat) != 0:
-    #     main_category = m_cat[0].strip()
-    # else:
-    #     for content in soup.select('h2'):
-    #         m_cat.append(content.text)
-    #     main_category = m_cat[0].strip()
-
     tables = soup.find_all('table')
     tables_list = []
 
     for table in tables:
         tables_list.append(table)
-
-    # tables_dict = {main_category: tables_list}
 
     return tables_list
 
@@ -92,8 +82,6 @@ def parse_tables(t_list, m_category):
     :param t_list: словарь
     :param m_category:главная категория
     """
-    # t_list = list(tables_dict.values())[0]
-    # m_category = list(tables_dict.keys())[0]
 
     # создаём заголовки таблиц
     for table in t_list:
@@ -117,8 +105,15 @@ def parse_tables(t_list, m_category):
             table_row = []
             table_row.append(m_category)
             table_row.append(sub_category)
+            n = len(row_data)
             for item in row_data:
-                table_row.append(item.text.strip())
+                n -= 1
+                if n == 0 and item.text.startswith(tuple('0123456789')):
+                    item = round(float(item.text.replace(',', '.')), 2)
+                    item = item + (item / 100 * percent_up)
+                    table_row.append(item)
+                else:
+                    table_row.append(item.text.strip())
             length = len(mydata)
             mydata.loc[length] = table_row
 
