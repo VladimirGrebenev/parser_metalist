@@ -94,8 +94,12 @@ def parse_tables(t_list, m_category):
         # фиксируем подкатегории
         sub_category = str(headers[1]).replace('/', '-')
 
-        # меняем название второй колонки
+        # меняем названия колонок
         headers[1] = 'подкатегория'
+        headers[2] = 'Наименование (марка, ширина, размеры, полка, диаметр)'
+        headers[3] = 'Хар-ка (размер, диаметр, толщина, стенка, ширина, ' \
+                     'длина, полка)'
+        headers[4] = 'Ед.изм'
 
         # Create a dataframe
         mydata = pd.DataFrame(columns=headers)
@@ -108,6 +112,9 @@ def parse_tables(t_list, m_category):
             n = len(row_data)
             for item in row_data:
                 n -= 1
+                if sub_category == 'Нержавеющий лист (розница)' and n == 1:
+                    item = 'т'
+                    table_row.append(item)
                 if n == 0 and item.text.startswith(tuple('0123456789')):
                     item = round(float(item.text.replace(',', '.')), 2)
                     item = item + (item / 100 * percent_up)
