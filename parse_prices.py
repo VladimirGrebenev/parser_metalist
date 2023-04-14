@@ -113,15 +113,16 @@ def parse_tables(t_list, m_category):
             for item in row_data:
                 n -= 1
                 if m_category == 'Нержавеющий лист (розница)' and n == 1:
-                    item = 'т'
-                    table_row.append(item)
-                if n == 0 and item.text.startswith(tuple('0123456789')):
+                    table_row.append('т')
+                elif n == 0 and item.text.startswith(tuple('0123456789')):
                     item = round(float(item.text.replace(',', '.')), 2)
                     item = item + (item / 100 * percent_up)
                     table_row.append(item)
                 else:
                     table_row.append(item.text.replace(';', ',').strip())
+
             length = len(mydata)
+            print(m_category, sub_category)
             mydata.loc[length] = table_row
 
         # Export to csv
