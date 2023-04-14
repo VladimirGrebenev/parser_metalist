@@ -112,7 +112,7 @@ def parse_tables(t_list, m_category):
             n = len(row_data)
             for item in row_data:
                 n -= 1
-                if sub_category == 'Нержавеющий лист (розница)' and n == 1:
+                if m_category == 'Нержавеющий лист (розница)' and n == 1:
                     item = 'т'
                     table_row.append(item)
                 if n == 0 and item.text.startswith(tuple('0123456789')):
