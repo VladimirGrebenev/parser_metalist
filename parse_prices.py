@@ -113,7 +113,7 @@ def parse_tables(t_list, m_category):
                     item = item + (item / 100 * percent_up)
                     table_row.append(item)
                 else:
-                    table_row.append(item.text.strip())
+                    table_row.append(item.text.replace(';', ',').strip())
             length = len(mydata)
             mydata.loc[length] = table_row
 
