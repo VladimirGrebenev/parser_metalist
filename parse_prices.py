@@ -4,12 +4,13 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import os
+from pathlib import Path
 
 # ссылка на страницу со ссылками на прайсы
 price_url = 'https://mc.ru/price/msk#'
 # паттерн для поиска ссылок на прайсы
 price_pattern = 'https://mc.ru/prices/'
-# процент увеличения цены в прайсе
+# процент на который увеличиваем цены в прайсе
 percent_up = 1
 
 
@@ -19,6 +20,13 @@ def main():
     for title, link in price_links_dict.items():
         tables_list = parse_price_link(link)
         parse_tables(tables_list, title)
+
+    # путь до рабочей директории
+    basedir = os.path.abspath(os.getcwd())
+    # путь до папки с прайсами
+    price_dir = os.path.abspath(os.path.join(basedir, './price'))
+
+    csv_merger(price_dir, "price.csv", globmask="*.csv", chunksize=1000)
 
 
 def get_price_links(prc_url, prc_ptn):
@@ -115,21 +123,38 @@ def parse_tables(t_list, m_category):
                 if m_category == 'Нержавеющий лист (розница)' and n == 1:
                     table_row.append('т')
                 elif n == 0 and item.text.startswith(tuple('0123456789')):
-                    item = round(float(item.text.replace(',', '.')), 2)
+                    item = float(item.text.replace(',', '.'))
                     item = item + (item / 100 * percent_up)
-                    table_row.append(item)
+                    table_row.append(round(item))
                 else:
                     table_row.append(item.text.replace(';', ',').strip())
 
             length = len(mydata)
-            print(m_category, sub_category)
             mydata.loc[length] = table_row
 
         # Export to csv
         price_path = f'./price/'
         if not os.path.exists(price_path):
             os.makedirs(price_path)
-        mydata.to_csv(fr'./price/{m_category}-{sub_category}', index=False)
+        mydata.to_csv(fr'./price/{m_category}-{sub_category}.csv', index=False)
+
+
+def csv_merger(path, out_filename="res.csv", globmask="*.csv", chunksize=5000,
+               **kwargs):
+    """
+    Функция объединяет все файлы-прайсы в один файл-прайс.
+    :param path: Путь до папки с прайсами для объединения.
+    :param out_filename: Имя итогового файла с прайсами.
+    :param globmask: Маска для отбора файлов.
+    :param chunksize: Размер чанка.
+    """
+    path = Path(path)
+    need_header = True
+    for f in path.glob(globmask):
+        for chunk in pd.read_csv(f, chunksize=chunksize, **kwargs):
+            chunk.to_csv(out_filename, index=False, header=need_header,
+                         mode="a")
+            need_header = False
 
 
 if __name__ == '__main__':
