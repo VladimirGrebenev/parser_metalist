@@ -5,6 +5,7 @@ import requests
 import pandas as pd
 import os
 from pathlib import Path
+import csv
 
 # ссылка на страницу со ссылками на прайсы
 price_url = 'https://mc.ru/price/msk#'
@@ -27,6 +28,7 @@ def main():
     price_dir = os.path.abspath(os.path.join(basedir, './price'))
 
     csv_merger(price_dir, "price.csv", globmask="*.csv", chunksize=1000)
+    transform_data('price.csv', 'woo_price.csv')
 
 
 def get_price_links(prc_url, prc_ptn):
@@ -155,6 +157,29 @@ def csv_merger(path, out_filename="res.csv", globmask="*.csv", chunksize=5000,
             chunk.to_csv(out_filename, index=False, header=need_header,
                          mode="a")
             need_header = False
+
+
+def transform_data(input_file, output_file):
+    with open(input_file, 'r', encoding='utf-8') as infile, \
+            open(output_file, 'w', encoding='utf-8', newline='') as outfile:
+        reader = csv.reader(infile)
+        writer = csv.writer(outfile)
+        header = []
+        header.append('Категории')
+        header.append('Имя')
+        header.append('Короткое описание')
+        header.append('Базовая цена')
+        writer.writerow(header)
+        for i, row in enumerate(reader):
+            if i == 0:
+                continue
+            if row[4] == 'звоните':
+                row[4] = '0'
+            new_row = [f'Каталог>{row[0]}>{row[1]}',
+                       f'{row[1]} {row[2]}, ед.изм.: {row[4]}',
+                       row[3],
+                       row[5]]
+            writer.writerow(new_row)
 
 
 if __name__ == '__main__':
