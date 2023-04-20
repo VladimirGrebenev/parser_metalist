@@ -12,7 +12,7 @@ price_url = 'https://mc.ru/price/msk#'
 # паттерн для поиска ссылок на прайсы
 price_pattern = 'https://mc.ru/prices/'
 # процент на который увеличиваем цены в прайсе
-percent_up = 1
+percent_up = 5
 
 
 def main():
@@ -103,6 +103,7 @@ def parse_tables(t_list, m_category):
 
         # фиксируем подкатегории
         sub_category = str(headers[1]).replace('/', '-')
+        sub_category = sub_category.replace(',', ' ')
 
         # меняем названия колонок
         headers[1] = 'подкатегория'
@@ -129,7 +130,8 @@ def parse_tables(t_list, m_category):
                     item = item + (item / 100 * percent_up)
                     table_row.append(round(item))
                 else:
-                    table_row.append(item.text.replace(';', ',').strip())
+                    table_row.append(item.text.replace(',', ' | ').replace(
+                        ';', ' | ').strip())
 
             length = len(mydata)
             mydata.loc[length] = table_row
@@ -167,16 +169,16 @@ def transform_data(input_file, output_file):
         header = []
         header.append('Категории')
         header.append('Имя')
-        header.append('Короткое описание')
+        header.append('Краткое описание')
         header.append('Базовая цена')
         writer.writerow(header)
         for i, row in enumerate(reader):
             if i == 0:
                 continue
-            if row[4] == 'звоните':
-                row[4] = '0'
-            new_row = [f'Каталог>{row[0]}>{row[1]}',
-                       f'{row[1]} {row[2]}, ед.изм.: {row[4]}',
+            if row[5] == 'звоните':
+                row[5] = '0'
+            new_row = [f'Каталог > {row[0]} > {row[1]}',
+                       f'{row[1]} {row[2]} | ед.изм.:{row[4]}',
                        row[3],
                        row[5]]
             writer.writerow(new_row)
