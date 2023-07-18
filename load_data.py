@@ -7,8 +7,7 @@ from env import CONS_SEC, CONS_KEY
 
 # параметры подключения к api
 SITE_URL = 'https://www.stalservis.online'
-# CONS_KEY = 'ck_8310821bbc5b2cf2119b0413a697367b5a1606ce'
-# CONS_SEC = 'cs_ad2341928e3649312c1f03888112421e7fca82d8'
+
 
 # Api Setup:
 wcapi = API(
