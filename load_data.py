@@ -36,6 +36,20 @@ def import_products_from_csv(csv_file):
 
         number = 0  # количество экспортированных товаров
 
+        # Создание категорий
+        existing_categories = wcapi.get("products/categories").json()
+        category_mapping = {}
+
+        for existing_category in existing_categories:
+            category_mapping[existing_category['name']] = existing_category['id']
+
+        # Создание подкатегорий
+        existing_subcategories = wcapi.get("products/categories").json()
+        subcategory_mapping = {}
+
+        for existing_subcategory in existing_subcategories:
+            subcategory_mapping[existing_subcategory['name']] = existing_subcategory['id']
+
         for row in csv_data:
             # Индексирование данных из CSV
             category = row[category_index]
@@ -45,46 +59,29 @@ def import_products_from_csv(csv_file):
             price = row[price_index]
 
             # Создание категории, если ее нет
-            existing_categories = wcapi.get("products/categories").json()
-
-            category_exists = False
-            category_id = None
-
-            for existing_category in existing_categories:
-
-                if existing_category['name'] == category:
-                    category_exists = True
-                    category_id = existing_category['id']
-                    break
-
-            if not category_exists:
+            if category not in category_mapping:
                 category_data = {
                     'name': category,
                     'parent': 0  # При отсутствии родительской категории
                 }
                 created_category = wcapi.post("products/categories", category_data).json()
-                category_id = created_category['id']
+                category_mapping[category] = created_category['id']
+
+            category_id = category_mapping[category]
 
             # Создание подкатегории, если есть
             if subcategory:
-                existing_subcategories = wcapi.get(f"products/categories/").json()
-
-                subcategory_exists = False
-                subcategory_id = None
-
-                for existing_subcategory in existing_subcategories:
-                    if existing_subcategory['name'] == subcategory:
-                        subcategory_exists = True
-                        subcategory_id = existing_subcategory['id']
-                        break
-
-                if not subcategory_exists:
+                if subcategory not in subcategory_mapping:
                     subcategory_data = {
                         'name': subcategory,
                         'parent': category_id
                     }
                     created_subcategory = wcapi.post("products/categories/", subcategory_data).json()
-                    subcategory_id = created_subcategory['id']
+                    subcategory_mapping[subcategory] = created_subcategory['id']
+
+                subcategory_id = subcategory_mapping[subcategory]
+            else:
+                subcategory_id = None
 
             # Создание товара в WooCommerce
             data = {
@@ -94,15 +91,15 @@ def import_products_from_csv(csv_file):
                 'categories': [
                     {
                         'id': category_id
-                    },
-                    {
-                        'id': subcategory_id
                     }
-                ],
+                ]
             }
 
+            if subcategory_id:
+                data['categories'].append({'id': subcategory_id})
+
             response = wcapi.post("products", data).json()
-            number = number + 1
+            number += 1
 
             if 'message' in response:
                 print('Ошибка при импорте товара:', response['message'])
