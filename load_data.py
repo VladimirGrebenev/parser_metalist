@@ -4,10 +4,8 @@ import pprint
 import pandas as pd
 from env import CONS_SEC, CONS_KEY
 
-
-# параметры подключения к api
+# url для подключения к api
 SITE_URL = 'https://www.stalservis.online'
-
 
 # Api Setup:
 wcapi = API(
@@ -23,6 +21,7 @@ wcapi = API(
 def main():
     # Вызов функции импорта товаров из CSV-файла
     import_products_from_csv('test.csv')
+
 
 def import_products_from_csv(csv_file):
     with open(csv_file, 'r', encoding='utf-8') as file:
