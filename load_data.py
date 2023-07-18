@@ -37,18 +37,9 @@ def import_products_from_csv(csv_file):
         number = 0  # количество экспортированных товаров
 
         # Создание категорий
-        existing_categories = wcapi.get("products/categories").json()
         category_mapping = {}
-
-        for existing_category in existing_categories:
-            category_mapping[existing_category['name']] = existing_category['id']
-
         # Создание подкатегорий
-        existing_subcategories = wcapi.get("products/categories").json()
         subcategory_mapping = {}
-
-        for existing_subcategory in existing_subcategories:
-            subcategory_mapping[existing_subcategory['name']] = existing_subcategory['id']
 
         for row in csv_data:
             # Индексирование данных из CSV
