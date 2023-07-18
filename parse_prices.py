@@ -7,12 +7,14 @@ import os
 from pathlib import Path
 import csv
 
+
+
 # ссылка на страницу со ссылками на прайсы
 price_url = 'https://mc.ru/price/msk#'
 # паттерн для поиска ссылок на прайсы
 price_pattern = 'https://mc.ru/prices/'
 # процент на который увеличиваем цены в прайсе
-percent_up = 5
+percent_up = 1.6
 
 
 def main():
@@ -28,7 +30,7 @@ def main():
     price_dir = os.path.abspath(os.path.join(basedir, './price'))
 
     csv_merger(price_dir, "price.csv", globmask="*.csv", chunksize=1000)
-    transform_data('price.csv', 'woo_price.csv')
+    # transform_data('price.csv', 'woo_price.csv')
 
 
 def get_price_links(prc_url, prc_ptn):
@@ -96,7 +98,7 @@ def parse_tables(t_list, m_category):
     # создаём заголовки таблиц
     for table in t_list:
         headers = []
-        headers.append('категория')
+        headers.append('Категория')
         for el in table.find_all('th'):
             title = el.text
             headers.append(title)
@@ -106,11 +108,11 @@ def parse_tables(t_list, m_category):
         sub_category = sub_category.replace(',', ' ')
 
         # меняем названия колонок
-        headers[1] = 'подкатегория'
+        headers[1] = 'Подкатегория'
         headers[2] = 'Наименование (марка, ширина, размеры, полка, диаметр)'
         headers[3] = 'Хар-ка (размер, диаметр, толщина, стенка, ширина, ' \
                      'длина, полка)'
-        headers[4] = 'Ед.изм'
+        headers[4] = 'Единица измерения'
 
         # Create a dataframe
         mydata = pd.DataFrame(columns=headers)
@@ -171,6 +173,7 @@ def transform_data(input_file, output_file):
         header.append('Имя')
         header.append('Краткое описание')
         header.append('Базовая цена')
+
         writer.writerow(header)
         for i, row in enumerate(reader):
             if i == 0:

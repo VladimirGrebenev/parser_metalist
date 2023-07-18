@@ -1,63 +1,116 @@
-"""Загрузчик данных в базу данных на сайт.
-Данный код использует библиотеку mysql.connector для подключения к базе данных
-WordPress и библиотеку wordpress_xmlrpc для работы с XMLRPC API.
-В коде сначала подключаемся к базе данных WordPress и создаем XMLRPC клиент.
-Затем загружаем CSV файл в медиабиблиотеку WordPress и получаем ссылку на него.
-Далее получаем все идентификаторы товаров WooCommerce из базы данных
-WordPress и для каждого товара обновляем его цену в базе данных WordPress.
-Обратите внимание, что в данном примере мы обновляем цену каждого товара на
-жестко заданное значение '10.00', но в реальном применении вы, вероятно,
-захотите использовать данные из загруженного CSV файла. После завершения
-работы код закрывает соединение с базой данных."""
+from woocommerce import API
+import csv
+import pprint
+import pandas as pd
+from env import CONS_SEC, CONS_KEY
 
 
-import os
-import mysql.connector
-from wordpress_xmlrpc import Client, WordPressPost
-from wordpress_xmlrpc.methods.media import UploadFile
+# параметры подключения к api
+SITE_URL = 'https://www.stalservis.online'
+# CONS_KEY = 'ck_8310821bbc5b2cf2119b0413a697367b5a1606ce'
+# CONS_SEC = 'cs_ad2341928e3649312c1f03888112421e7fca82d8'
 
-# Connect to the WordPress website's database
-db = mysql.connector.connect(
-    host="<database_host>",
-    user="<database_username>",
-    password="<database_password>",
-    database="<database_name>"
+# Api Setup:
+wcapi = API(
+    url=SITE_URL,  # Your store URL
+    consumer_key=CONS_KEY,  # Your consumer key
+    consumer_secret=CONS_SEC,  # Your consumer secret
+    wp_api=True,  # Enable the WP REST API integration
+    version="wc/v3",  # WooCommerce WP REST API version
+    timeout=10000
 )
 
-# Create a XMLRPC WordPress client
-client = Client('<website_url>/xmlrpc.php', '<wordpress_username>', '<wordpress_password>')
 
-# Define the path of the CSV file to be uploaded
-csv_file_path = '<path_to_csv_file>/woo_price.csv'
+def main():
+    # Вызов функции импорта товаров из CSV-файла
+    import_products_from_csv('test.csv')
 
-# Upload the CSV file to the WordPress media library
-with open(csv_file_path, 'rb') as file:
-    file_data = file.read()
-    file_name = os.path.basename(csv_file_path)
-    data = {
-        'name': file_name,
-        'type': 'text/csv'
-    }
-    media = UploadFile(data, file_data)
-    media_id = client.call(UploadFile(media))
+def import_products_from_csv(csv_file):
+    with open(csv_file, 'r', encoding='utf-8') as file:
+        csv_data = csv.reader(file)
+        headers = next(csv_data)  # Заголовки столбцов CSV
+        category_index = headers.index('Категория')
+        subcategory_index = headers.index('Подкатегория')
+        title_index = headers.index('Наименование (марка, ширина, размеры, полка, диаметр)')
+        short_description_index = headers.index('Хар-ка (размер, диаметр, толщина, стенка, ширина, длина, полка)')
+        unit_index = headers.index('Единица измерения')
+        price_index = headers.index('Цена')
 
-# Get the location of the WordPress media library
-media_url = client.call('wp.getMediaItem', media_id)['source_url']
+        number = 0  # количество экспортированных товаров
 
-# Retrieve the WooCommerce product IDs from the WordPress database
-cursor = db.cursor()
-query = "SELECT ID FROM wp_posts WHERE post_type='product' AND post_status='publish';"
-cursor.execute(query)
-product_ids = cursor.fetchall()
-cursor.close()
+        for row in csv_data:
+            # Индексирование данных из CSV
+            category = row[category_index]
+            subcategory = row[subcategory_index]
+            title = row[subcategory_index] + ' | ' + row[title_index] + ' | ед.изм.: ' + row[unit_index]
+            short_description = row[short_description_index]
+            price = row[price_index]
 
-# Loop over each product and update the product price in the WordPress database
-for product_id in product_ids:
-    post = WordPressPost()
-    post.id = product_id[0]
-    post.custom_fields = [{'key': '_price', 'value': '10.00'}, {'key': '_regular_price', 'value': '10.00'}, {'key': '_sale_price', 'value': ''}]
-    post.post_status = 'publish'
-    client.call(post)
+            # Создание категории, если ее нет
+            existing_categories = wcapi.get("products/categories").json()
 
-# Close the database connection
-db.close()
+            category_exists = False
+            category_id = None
+
+            for existing_category in existing_categories:
+
+                if existing_category['name'] == category:
+                    category_exists = True
+                    category_id = existing_category['id']
+                    break
+
+            if not category_exists:
+                category_data = {
+                    'name': category,
+                    'parent': 0  # При отсутствии родительской категории
+                }
+                created_category = wcapi.post("products/categories", category_data).json()
+                category_id = created_category['id']
+
+            # Создание подкатегории, если есть
+            if subcategory:
+                existing_subcategories = wcapi.get(f"products/categories/").json()
+
+                subcategory_exists = False
+                subcategory_id = None
+
+                for existing_subcategory in existing_subcategories:
+                    if existing_subcategory['name'] == subcategory:
+                        subcategory_exists = True
+                        subcategory_id = existing_subcategory['id']
+                        break
+
+                if not subcategory_exists:
+                    subcategory_data = {
+                        'name': subcategory,
+                        'parent': category_id
+                    }
+                    created_subcategory = wcapi.post("products/categories/", subcategory_data).json()
+                    subcategory_id = created_subcategory['id']
+
+            # Создание товара в WooCommerce
+            data = {
+                'name': title,
+                'short_description': short_description,
+                'regular_price': price,
+                'categories': [
+                    {
+                        'id': category_id
+                    },
+                    {
+                        'id': subcategory_id
+                    }
+                ],
+            }
+
+            response = wcapi.post("products", data).json()
+            number = number + 1
+
+            if 'message' in response:
+                print('Ошибка при импорте товара:', response['message'])
+            else:
+                print(f'Товар успешно импортирован №{number} {response["id"]}')
+
+
+if __name__ == '__main__':
+    main()
