@@ -20,7 +20,14 @@ wcapi = API(
 
 def main():
     # Вызов функции импорта товаров из CSV-файла
-    import_products_from_csv('price.csv')
+    to_load = import_products_from_csv('price.csv')
+
+    response = wcapi.post("products/batch", to_load).json()
+
+    if 'message' in response:
+        print('Ошибка при импорте товаров:', response['message'])
+    else:
+        print(f'Товары успешно импортирован {response["id"]}')
 
 
 def import_products_from_csv(csv_file):
@@ -41,6 +48,7 @@ def import_products_from_csv(csv_file):
         # Создание подкатегорий
         subcategory_mapping = {}
 
+        products = []
 
         for row in csv_data:
             # Индексирование данных из CSV
@@ -76,7 +84,7 @@ def import_products_from_csv(csv_file):
                 subcategory_id = None
 
             # Создание товара в WooCommerce
-            data = {
+            data_product = {
                 'name': title,
                 'short_description': short_description,
                 'regular_price': price,
@@ -88,15 +96,15 @@ def import_products_from_csv(csv_file):
             }
 
             if subcategory_id:
-                data['categories'].append({'id': subcategory_id})
+                data_product['categories'].append({'id': subcategory_id})
 
-            response = wcapi.post("products", data).json()
-            number += 1
+            products.append(data_product)
 
-            if 'message' in response:
-                print('Ошибка при импорте товара:', response['message'])
-            else:
-                print(f'Товар успешно импортирован №{number} {response["id"]}')
+        data = {
+            "create": products
+        }
+
+        return data
 
 
 if __name__ == '__main__':
