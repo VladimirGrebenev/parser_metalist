@@ -20,7 +20,7 @@ wcapi = API(
 
 def main():
     # Вызов функции импорта товаров из CSV-файла
-    import_products_from_csv('test.csv')
+    import_products_from_csv('price.csv')
 
 
 def import_products_from_csv(csv_file):
@@ -40,6 +40,7 @@ def import_products_from_csv(csv_file):
         category_mapping = {}
         # Создание подкатегорий
         subcategory_mapping = {}
+
 
         for row in csv_data:
             # Индексирование данных из CSV
