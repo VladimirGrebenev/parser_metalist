@@ -1,7 +1,5 @@
 from woocommerce import API
 import csv
-import pprint
-import pandas as pd
 from env import CONS_SEC, CONS_KEY
 
 # url для подключения к api
@@ -18,19 +16,85 @@ wcapi = API(
 )
 
 
-def main():
-    # Вызов функции импорта товаров из CSV-файла
-    to_load = import_products_from_csv('price.csv')
+# запускающая функция
+def main_load():
+    # очистка каталога
+    delete_all_categories()
+    delete_all_products()
+    print('каталог очищен')
 
-    response = wcapi.post("products/batch", to_load).json()
+    # Вызов функций импорта товаров из CSV-файла
+    to_load = import_products_from_csv('test2.csv')
+    print('список словарей товаров подготовлен')
+    # отправка в базу пакетов 100 записей
+    api_batch_sending(to_load)
 
-    if 'message' in response:
-        print('Ошибка при импорте товаров:', response['message'])
-    else:
-        print(f'Товары успешно импортирован {response["id"]}')
+
+def delete_all_categories():
+    """функция удаления всех категорий"""
+    all_categories = wcapi.get("products/categories").json()
+    categories_ids = []
+
+    for category in all_categories:
+        categories_ids.append(category['id'])
+
+    data_to_del = {
+        "delete": categories_ids
+    }
+
+    wcapi.post("products/categories/batch", data_to_del).json()
+
+
+def delete_all_products():
+    """функция удаления всех товаров"""
+    all_products = wcapi.get("products").json()
+    products_ids = []
+
+    for product in all_products:
+        products_ids.append(product['id'])
+
+    data_to_del = {
+        "delete": products_ids
+    }
+
+    wcapi.post("products/batch", data_to_del).json()
+
+
+def divide_list(lst, n):
+    """функция разделения списка на списки по нужному количеству объектов"""
+    divided_lists = []
+    for i in range(0, len(lst), n):
+        divided_lists.append(lst[i:i + n])
+    return divided_lists
+
+
+def api_batch_sending(products):
+    """функция отправки пакетов, принимает на вход список с словарями товаров"""
+
+    # разделяем список с товарами на пакеты по 100
+    divided_products = divide_list(products, 100)
+
+    # отправка пакетов
+    n = 0  # счётчик пакетов
+    for sublist in divided_products:
+
+        data = {
+            "create": sublist
+        }
+
+        response = wcapi.post("products/batch", data).json()
+
+        n += 1
+
+        if 'message' in response:
+            print('Ошибка при импорте товаров:', response['message'])
+        else:
+            print(f'Пакет №{n} импротирован')
 
 
 def import_products_from_csv(csv_file):
+    """функция подготовки списка словарей товаров для инпорта через API из файла CSV"""
+
     with open(csv_file, 'r', encoding='utf-8') as file:
         csv_data = csv.reader(file)
         headers = next(csv_data)  # Заголовки столбцов CSV
@@ -54,7 +118,7 @@ def import_products_from_csv(csv_file):
             # Индексирование данных из CSV
             category = row[category_index]
             subcategory = row[subcategory_index]
-            title = row[subcategory_index] + ' | ' + row[title_index] + ' | ед.изм.: ' + row[unit_index]
+            title = f'{row[subcategory_index]} | {row[title_index]} | ед.изм.: {row[unit_index]}'
             short_description = row[short_description_index]
             price = row[price_index]
 
@@ -100,12 +164,8 @@ def import_products_from_csv(csv_file):
 
             products.append(data_product)
 
-        data = {
-            "create": products
-        }
-
-        return data
+        return products
 
 
 if __name__ == '__main__':
-    main()
+    main_load()
