@@ -38,11 +38,14 @@ def delete_all_categories():
     for category in all_categories:
         categories_ids.append(category['id'])
 
-    data_to_del = {
-        "delete": categories_ids
-    }
+    divided_cat_ids = divide_list(categories_ids, 100)
 
-    wcapi.post("products/categories/batch", data_to_del).json()
+    for sublist in divided_cat_ids:
+        data_to_del = {
+            "delete": sublist
+        }
+
+        wcapi.post("products/categories/batch", data_to_del).json()
 
 
 def delete_all_products():
@@ -53,11 +56,14 @@ def delete_all_products():
     for product in all_products:
         products_ids.append(product['id'])
 
-    data_to_del = {
-        "delete": products_ids
-    }
+    divided_product_ids = divide_list(products_ids, 100)
 
-    wcapi.post("products/batch", data_to_del).json()
+    for sublist in divided_product_ids:
+        data_to_del = {
+            "delete": sublist
+        }
+
+        wcapi.post("products/batch", data_to_del).json()
 
 
 def divide_list(lst, n):
@@ -104,8 +110,6 @@ def import_products_from_csv(csv_file):
         short_description_index = headers.index('Хар-ка (размер, диаметр, толщина, стенка, ширина, длина, полка)')
         unit_index = headers.index('Единица измерения')
         price_index = headers.index('Цена')
-
-        number = 0  # количество экспортированных товаров
 
         # Создание категорий
         category_mapping = {}
