@@ -1,9 +1,10 @@
 from woocommerce import API
 import csv
-from env import CONS_SEC, CONS_KEY
+from env import CONS_SEC, CONS_KEY, SITE_URL_UPLOAD
+from pprint import pprint
 
 # url для подключения к api
-SITE_URL = 'https://www.stalservis.online'
+SITE_URL = SITE_URL_UPLOAD
 
 # Api Setup:
 wcapi = API(
@@ -18,16 +19,22 @@ wcapi = API(
 
 # запускающая функция
 def main_load():
-    # очистка каталога
-    delete_all_categories()
-    delete_all_products()
-    print('каталог очищен')
+    # all_products = wcapi.get("products", params={"per_page": 100}).json()
+    all_products = wcapi.get("products").json()
+    for pr in all_products:
+        print(pr)
 
-    # Вызов функций импорта товаров из CSV-файла
-    to_load = import_products_from_csv('test2.csv')
-    print('список словарей товаров подготовлен')
-    # отправка в базу пакетов 100 записей
-    api_batch_sending(to_load)
+
+    # # очистка каталога
+    # delete_all_categories()
+    # delete_all_products()
+    # print('каталог очищен')
+
+    # # Вызов функций импорта товаров из CSV-файла
+    # to_load = import_products_from_csv('test2.csv')
+    # print('список словарей товаров подготовлен')
+    # # отправка в базу пакетов 100 записей
+    # api_batch_sending(to_load)
 
 
 def delete_all_categories():
@@ -53,10 +60,15 @@ def delete_all_products():
     all_products = wcapi.get("products").json()
     products_ids = []
 
+
     for product in all_products:
+        print(product)
         products_ids.append(product['id'])
 
+    print(products_ids)
+
     divided_product_ids = divide_list(products_ids, 100)
+    print(divided_product_ids)
 
     for sublist in divided_product_ids:
         data_to_del = {
