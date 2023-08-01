@@ -1,4 +1,6 @@
 import time
+import asyncio
+import aiohttp
 import csv
 from woocommerce import API
 from env import CONS_SEC, CONS_KEY, SITE_URL_UPLOAD
@@ -17,55 +19,44 @@ wcapi = API(
 )
 
 
-# запускающая функция
-def main_load():
-    # # очистка каталога
-    # delete_all_categories()
-    # delete_all_products()
-    # print('каталог очищен')
+def delete_all_products(self):
+    count = 0
+    while True:
+        params = {"per_page": "100"}
+        response_get = self.wcapi.get("products", params=params).json()
 
-    # Вызов функций импорта товаров из CSV-файла
-    to_load = import_products_from_csv('test.csv')
-    print('список словарей товаров подготовлен')
-    # отправка в базу пакетов 100 записей
-    api_batch_sending(to_load)
+        products_to_delete = [d['id'] for d in response_get]
+        data = {'delete': products_to_delete}
+        response_delete = self.wcapi.post("products/batch", data).json()
+        count += len(products_to_delete)
+        if len(products_to_delete) < 100:
+            break
+        else:
+            print("Deleted products: " + str(count))
 
-
-def delete_all_categories():
-    """функция удаления всех категорий"""
-    all_categories = wcapi.get("products/categories").json()
-    categories_ids = []
-
-    for category in all_categories:
-        categories_ids.append(category['id'])
-
-    divided_cat_ids = divide_list(categories_ids, 100)
-
-    for sublist in divided_cat_ids:
-        data_to_del = {
-            "delete": sublist
-        }
-
-        wcapi.post("products/categories/batch", data_to_del).json()
+    print("")
+    print("Deleted products: " + str(count))
 
 
-def delete_all_products():
-    """функция удаления всех товаров"""
-    all_products = wcapi.get("products").json()
-    products_ids = []
+def delete_all_categories(self):
+    count = 0
+    while True:
+        params = {"per_page": "100"}
+        response_get = self.wcapi.get("products/categories",
+                                      params=params).json()
 
-    for product in all_products:
-        products_ids.append(product['id'])
+        categories_to_delete = [d['id'] for d in response_get]
+        data = {'delete': categories_to_delete}
+        response_delete = self.wcapi.post("products/categories/batch",
+                                          data).json()
+        count += len(categories_to_delete)
+        if len(categories_to_delete) < 100:
+            break
+        else:
+            print("Deleted categories: " + str(count))
 
-    divided_product_ids = divide_list(products_ids, 100)
-
-    for sublist in divided_product_ids:
-        data_to_del = {
-            "delete": sublist
-        }
-
-        wcapi.post("products/batch", data_to_del).json()
-
+    print("")
+    print("Deleted categories: " + str(count))
 
 def divide_list(lst, n):
     """функция разделения списка на списки по нужному количеству объектов"""
@@ -73,30 +64,6 @@ def divide_list(lst, n):
     for i in range(0, len(lst), n):
         divided_lists.append(lst[i:i + n])
     return divided_lists
-
-
-def api_batch_sending(products):
-    """функция отправки пакетов, принимает на вход список с словарями товаров"""
-
-    # разделяем список с товарами на пакеты по 100
-    divided_products = divide_list(products, 100)
-
-    # отправка пакетов
-    n = 0  # счётчик пакетов
-    for sublist in divided_products:
-
-        data = {
-            "create": sublist
-        }
-
-        response = wcapi.post("products/batch", data).json()
-
-        n += 1
-
-        if 'message' in response:
-            print('Ошибка при импорте товаров:', response['message'])
-        else:
-            print(f'Пакет №{n} импротирован')
 
 
 def import_products_from_csv(csv_file):
@@ -172,7 +139,22 @@ def import_products_from_csv(csv_file):
         return products
 
 
+# запускающая функция
+async def main_load():
+    async with aiohttp.ClientSession() as session:
+        for products in divided_products:
+            load_data = {
+                "create": products
+            }
+            async with session.post(
+                    'https://test.veneberg81.ru/wp-json/wc/v3/products/batch?consumer_key={CONS_KEY}&consumer_secret={CONS_SEC}&wp_api={True}&version={"wc/v3"}&timeout={10000}',
+                    data=load_data):
+                pass
+
+
 if __name__ == '__main__':
     print(time.strftime('%X'))
-    main_load()
+    to_load_products = import_products_from_csv('test.csv')
+    divided_products = divide_list(to_load_products, 100)
+    asyncio.run(main_load())
     print(time.strftime('%X'))
