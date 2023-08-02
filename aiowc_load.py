@@ -12,7 +12,7 @@ wcapi = API(
     consumer_secret=CONS_SEC,  # Your consumer secret
     wp_api=True,  # Enable the WP REST API integration
     version="wc/v3",  # WooCommerce WP REST API version
-    timeout=10000,
+    timeout=100000,
 
 )
 
@@ -35,11 +35,14 @@ async def main(sublists_):
             "create": sublist
         }
         tasks.append(asyncio.create_task(send_to_api(data)))
+        await asyncio.sleep(0.5)
 
     for task in tasks:
         await task
 
 
-asyncio.run(main(divided_products))
+asyncio.get_event_loop().run_until_complete(main(divided_products))
+# asyncio.run(main(divided_products))
+
 
 print(f"Загрузка завершена: {time.strftime('%X')}")
