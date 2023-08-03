@@ -19,6 +19,7 @@ wcapi = API(
 )
 
 print(f"начало: {time.strftime('%X')}")
+# to_load = import_products_from_csv('test.csv')
 to_load = import_products_from_csv('price.csv')
 print(f"Категории загуржены, прайс для загрузки готов: {time.strftime('%X')}")
 divided_products = divide_list(to_load, 100)
@@ -35,21 +36,23 @@ print(f"Пакеты для загурзки сформированы: {time.str
 async def send_to_api(data):
     async with APISession(wcapi) as session:
         res = await session.post('products/batch', data)
+        res.close()
 
 
 async def main(sublists_):
     tasks = []
+
     for sublist in sublists_:
         data = {
             "create": sublist
         }
         tasks.append(asyncio.create_task(send_to_api(data)))
-        # await asyncio.sleep(2)
+        await asyncio.sleep(3)
 
     for task in tasks:
         await task
 
 
-# asyncio.get_event_loop().run_until_complete(main(divided_products))
-asyncio.run(main(divided_products))
+asyncio.get_event_loop().run_until_complete(main(divided_products))
+# asyncio.run(main(divided_products))
 print(f"Загрузка завершена: {time.strftime('%X')}")
