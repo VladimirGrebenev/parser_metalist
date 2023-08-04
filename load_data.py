@@ -60,14 +60,10 @@ def delete_all_categories():
         count += len(categories_to_delete)
         if len(categories_to_delete) < 100:
             break
-        else:
-            print(f'Deleted categories: {str(count)}')
-
-    print('')
     print(f'Deleted categories: {str(count)}')
 
 
-def delete_all_products():
+def force_delete_all_products():
     """функция удаления всех товаров"""
     params = {"per_page": "100"}
     response_get = wcapi.get("products", params=params).json()
@@ -75,8 +71,23 @@ def delete_all_products():
     params = {"force": "True"}
 
     for p in products_to_delete:
-        print(f'удалён продукт: {p}')
         response_delete = wcapi.delete(f'products/{str(p)}', params=params).json()
+
+
+def delete_all_products():
+    count = 0
+    while True:
+        params = {"per_page": "100"}
+        response_get = wcapi.get("products", params=params).json()
+
+        products_to_delete = [d['id'] for d in response_get]
+        data = {'delete': products_to_delete}
+        response_delete = wcapi.post("products/batch", data).json()
+        count += len(products_to_delete)
+        if len(products_to_delete) < 100:
+            break
+
+    print(f"Deleted products: {str(count)}")
 
 
 def divide_list(lst, n):
