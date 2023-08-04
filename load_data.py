@@ -31,40 +31,52 @@ def main_load():
     api_batch_sending(to_load)
 
 
+# def delete_all_categories():
+#     """функция удаления всех категорий"""
+#     all_categories = wcapi.get("products/categories").json()
+#     categories_ids = []
+#
+#     for category in all_categories:
+#         categories_ids.append(category['id'])
+#
+#     divided_cat_ids = divide_list(categories_ids, 100)
+#
+#     for sublist in divided_cat_ids:
+#         data_to_del = {
+#             "delete": sublist
+#         }
+#
+#         wcapi.post("products/categories/batch", data_to_del).json()
+
+
 def delete_all_categories():
-    """функция удаления всех категорий"""
-    all_categories = wcapi.get("products/categories").json()
-    categories_ids = []
+    count = 0
+    while True:
+        params = {"per_page": "100"}
+        response_get = wcapi.get("products/categories", params=params).json()
+        categories_to_delete = [d['id'] for d in response_get]
+        data = {'delete': categories_to_delete}
+        response_delete = wcapi.post("products/categories/batch", data).json()
+        count += len(categories_to_delete)
+        if len(categories_to_delete) < 100:
+            break
+        else:
+            print(f'Deleted categories: {str(count)}')
 
-    for category in all_categories:
-        categories_ids.append(category['id'])
-
-    divided_cat_ids = divide_list(categories_ids, 100)
-
-    for sublist in divided_cat_ids:
-        data_to_del = {
-            "delete": sublist
-        }
-
-        wcapi.post("products/categories/batch", data_to_del).json()
+    print('')
+    print(f'Deleted categories: {str(count)}')
 
 
 def delete_all_products():
     """функция удаления всех товаров"""
-    all_products = wcapi.get("products").json()
-    products_ids = []
+    params = {"per_page": "100"}
+    response_get = wcapi.get("products", params=params).json()
+    products_to_delete = [d['id'] for d in response_get]
+    params = {"force": "True"}
 
-    for product in all_products:
-        products_ids.append(product['id'])
-
-    divided_product_ids = divide_list(products_ids, 100)
-
-    for sublist in divided_product_ids:
-        data_to_del = {
-            "delete": sublist
-        }
-
-        wcapi.post("products/batch", data_to_del).json()
+    for p in products_to_delete:
+        print(f'удалён продукт: {p}')
+        response_delete = wcapi.delete(f'products/{str(p)}', params=params).json()
 
 
 def divide_list(lst, n):

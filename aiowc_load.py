@@ -5,7 +5,7 @@ import aiohttp
 import json
 
 from env import CONS_SEC, CONS_KEY, SITE_URL_UPLOAD
-from load_data import import_products_from_csv, divide_list
+from load_data import import_products_from_csv, divide_list, delete_all_products, delete_all_categories
 
 # Api Setup:
 wcapi = API(
@@ -19,18 +19,17 @@ wcapi = API(
 )
 
 print(f"начало: {time.strftime('%X')}")
-# to_load = import_products_from_csv('test.csv')
-to_load = import_products_from_csv('price.csv')
+print('Удаление продуктов...')
+delete_all_products()
+print(f"Продукты удалены: {time.strftime('%X')}")
+print('Удаление категорий...')
+delete_all_categories()
+print(f"Категории удалены: {time.strftime('%X')}")
+to_load = import_products_from_csv('test999.csv')
+# to_load = import_products_from_csv('price.csv')
 print(f"Категории загуржены, прайс для загрузки готов: {time.strftime('%X')}")
 divided_products = divide_list(to_load, 100)
 print(f"Пакеты для загурзки сформированы: {time.strftime('%X')}")
-
-
-# class MyAPISession(APISession):
-#     async def __aenter__(self):
-#         connector = aiohttp.TCPConnector(limit=20, force_close=True)
-#         self.session = aiohttp.ClientSession(connector=connector, json_serialize=json.dumps)
-#         return self
 
 
 async def send_to_api(data):
@@ -53,6 +52,6 @@ async def main(sublists_):
         await task
 
 
-asyncio.get_event_loop().run_until_complete(main(divided_products))
-# asyncio.run(main(divided_products))
+# asyncio.get_event_loop().run_until_complete(main(divided_products))
+asyncio.run(main(divided_products))
 print(f"Загрузка завершена: {time.strftime('%X')}")

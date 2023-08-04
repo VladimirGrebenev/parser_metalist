@@ -1,3 +1,5 @@
+from woocommerce import API
+
 from env import CONS_SEC, CONS_KEY, SITE_URL_UPLOAD
 
 class WooApiHandler:
