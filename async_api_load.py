@@ -1,160 +1,55 @@
 import time
 import asyncio
 import aiohttp
-import csv
-from woocommerce import API
+
 from env import CONS_SEC, CONS_KEY, SITE_URL_UPLOAD
+from load_data import import_products_from_csv, divide_list, delete_all_products, delete_all_categories
 
-# url для подключения к api
-SITE_URL = SITE_URL_UPLOAD
-
-# Api Setup:
-wcapi = API(
-    url=SITE_URL,  # Your store URL
-    consumer_key=CONS_KEY,  # Your consumer key
-    consumer_secret=CONS_SEC,  # Your consumer secret
-    wp_api=True,  # Enable the WP REST API integration
-    version="wc/v3",  # WooCommerce WP REST API version
-    timeout=10000
-)
+consumer_key = CONS_KEY
+consumer_secret = CONS_SEC
 
 
-def delete_all_products(self):
-    count = 0
-    while True:
-        params = {"per_page": "100"}
-        response_get = self.wcapi.get("products", params=params).json()
+async def upload_product(session, product_data):
+    url = 'https://test.veneberg81.ru/wp-json/wc/v3/products/batch'
+    auth = aiohttp.BasicAuth(consumer_key, consumer_secret)
+    headers = {'Content-Type': 'application/json', 'encoding': 'utf-8'}
 
-        products_to_delete = [d['id'] for d in response_get]
-        data = {'delete': products_to_delete}
-        response_delete = self.wcapi.post("products/batch", data).json()
-        count += len(products_to_delete)
-        if len(products_to_delete) < 100:
-            break
+    async with session.post(url, json=product_data, auth=auth, headers=headers, timeout=10000) as response:
+        if response.status == 201 or response.status == 200:
+            result = await response.json(content_type=None, encoding='utf-8')
+            print("Uploaded 100 products")
+            # return result  # You can do additional processing or error handling here if needed
         else:
-            print("Deleted products: " + str(count))
-
-    print("")
-    print("Deleted products: " + str(count))
+            print(f"Error while uploading product: {response.status}")
+            # Handle error here or just continue to the next product
 
 
-def delete_all_categories(self):
-    count = 0
-    while True:
-        params = {"per_page": "100"}
-        response_get = self.wcapi.get("products/categories",
-                                      params=params).json()
+async def main(sublists_):
+    # Product data to upload
 
-        categories_to_delete = [d['id'] for d in response_get]
-        data = {'delete': categories_to_delete}
-        response_delete = self.wcapi.post("products/categories/batch",
-                                          data).json()
-        count += len(categories_to_delete)
-        if len(categories_to_delete) < 100:
-            break
-        else:
-            print("Deleted categories: " + str(count))
-
-    print("")
-    print("Deleted categories: " + str(count))
-
-def divide_list(lst, n):
-    """функция разделения списка на списки по нужному количеству объектов"""
-    divided_lists = []
-    for i in range(0, len(lst), n):
-        divided_lists.append(lst[i:i + n])
-    return divided_lists
-
-
-def import_products_from_csv(csv_file):
-    """функция подготовки списка словарей товаров для инпорта через API из файла CSV"""
-
-    with open(csv_file, 'r', encoding='utf-8') as file:
-        csv_data = csv.reader(file)
-        headers = next(csv_data)  # Заголовки столбцов CSV
-        category_index = headers.index('Категория')
-        subcategory_index = headers.index('Подкатегория')
-        title_index = headers.index('Наименование (марка, ширина, размеры, полка, диаметр)')
-        short_description_index = headers.index('Хар-ка (размер, диаметр, толщина, стенка, ширина, длина, полка)')
-        unit_index = headers.index('Единица измерения')
-        price_index = headers.index('Цена')
-
-        # Создание категорий
-        category_mapping = {}
-        # Создание подкатегорий
-        subcategory_mapping = {}
-
-        products = []
-
-        for row in csv_data:
-            # Индексирование данных из CSV
-            category = row[category_index]
-            subcategory = row[subcategory_index]
-            title = f'{row[subcategory_index]} | {row[title_index]} | ед.изм.: {row[unit_index]}'
-            short_description = row[short_description_index]
-            price = row[price_index]
-
-            # Создание категории, если ее нет
-            if category not in category_mapping:
-                category_data = {
-                    'name': category,
-                    'parent': 0  # При отсутствии родительской категории
-                }
-                created_category = wcapi.post("products/categories", category_data).json()
-                category_mapping[category] = created_category['id']
-
-            category_id = category_mapping[category]
-
-            # Создание подкатегории, если есть
-            if subcategory:
-                if subcategory not in subcategory_mapping:
-                    subcategory_data = {
-                        'name': subcategory,
-                        'parent': category_id
-                    }
-                    created_subcategory = wcapi.post("products/categories/", subcategory_data).json()
-                    subcategory_mapping[subcategory] = created_subcategory['id']
-
-                subcategory_id = subcategory_mapping[subcategory]
-            else:
-                subcategory_id = None
-
-            # Создание товара в WooCommerce
-            data_product = {
-                'name': title,
-                'short_description': short_description,
-                'regular_price': price,
-                'categories': [
-                    {
-                        'id': category_id
-                    }
-                ]
-            }
-
-            if subcategory_id:
-                data_product['categories'].append({'id': subcategory_id})
-
-            products.append(data_product)
-
-        return products
-
-
-# запускающая функция
-async def main_load():
     async with aiohttp.ClientSession() as session:
-        for products in divided_products:
-            load_data = {
-                "create": products
+        tasks = []
+        for sublist in sublists_:
+            data = {
+                "create": sublist
             }
-            async with session.post(
-                    'https://test.veneberg81.ru/wp-json/wc/v3/products/batch?consumer_key={CONS_KEY}&consumer_secret={CONS_SEC}&wp_api={True}&version={"wc/v3"}&timeout={10000}',
-                    data=load_data):
-                pass
+            task = asyncio.ensure_future(upload_product(session, data))
+            tasks.append(task)
+
+            if len(tasks) == 30:
+                for task in tasks:
+                    await task
+                    tasks.remove(task)
 
 
-if __name__ == '__main__':
-    print(time.strftime('%X'))
-    to_load_products = import_products_from_csv('test.csv')
-    divided_products = divide_list(to_load_products, 100)
-    asyncio.run(main_load())
-    print(time.strftime('%X'))
+
+print(f"старт файла asyn_api_load.py: {time.strftime('%X')}")
+print(f"Подготовка прайса к загрузке: {time.strftime('%X')}")
+to_load = import_products_from_csv('price.csv')
+print(f"Категории загружены, прайс для загрузки готов: {time.strftime('%X')}")
+divided_products = divide_list(to_load, 100)
+print(f"Пакеты для загурзки сформированы: {time.strftime('%X')}")
+
+print(f"начало загрузки товаров: {time.strftime('%X')}")
+asyncio.get_event_loop().run_until_complete(main(divided_products))
+print(f"конец загрузки товаров: {time.strftime('%X')}")

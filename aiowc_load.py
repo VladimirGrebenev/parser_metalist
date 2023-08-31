@@ -20,16 +20,16 @@ wcapi = API(
 
 print(f"начало: {time.strftime('%X')}")
 # print('Удаление продуктов...')
-# delete_all_products()
+delete_all_products()
 # print(f"Продукты удалены: {time.strftime('%X')}")
 # print('Удаление категорий...')
-# delete_all_categories()
+delete_all_categories()
 # print(f"Категории удалены: {time.strftime('%X')}")
-# to_load = import_products_from_csv('test999.csv')
-to_load = import_products_from_csv('price.csv')
-print(f"Категории загуржены, прайс для загрузки готов: {time.strftime('%X')}")
-divided_products = divide_list(to_load, 100)
-print(f"Пакеты для загурзки сформированы: {time.strftime('%X')}")
+# to_load = import_products_from_csv('test200.csv')
+# to_load = import_products_from_csv('price.csv')
+# print(f"Категории загуржены, прайс для загрузки готов: {time.strftime('%X')}")
+# divided_products = divide_list(to_load, 100)
+# print(f"Пакеты для загурзки сформированы: {time.strftime('%X')}")
 
 
 async def send_to_api(data):
@@ -56,9 +56,10 @@ async def main(sublists_):
                 count += 1
                 tasks.remove(task)
 
+
             print(f"пакетов {count} загружено {time.strftime('%X')}")
 
 
-asyncio.get_event_loop().run_until_complete(main(divided_products))
+# asyncio.get_event_loop().run_until_complete(main(divided_products))
 # asyncio.run(main(divided_products))
 print(f"Загрузка завершена: {time.strftime('%X')}")

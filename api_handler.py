@@ -18,32 +18,32 @@ class WooApiHandler:
         self.PRODUCT_UPLOAD_BATCH_SIZE = 30
         self.PRODUCT_DOWNLOAD_BATCH_SIZE = 100
 
-    def get_sub_categories(self, parent_id):
-        """CHANGE WOO PAGE"""
+    # def get_sub_categories(self, parent_id):
+    #     """CHANGE WOO PAGE"""
+    #
+    #     params = {"per_page": "100", "parent": parent_id}
+    #     get_sub_categories_response = self.wcapi.get("products/categories",
+    #                                                  params=params).json()
+    #
+    #     remote_sub_categories = []
+    #     count = 0
+    #     for item in get_sub_categories_response:
+    #         remote_sub_categories.append(self.create_remote_category(item))
+    #         count += 1
+    #
+    #     return remote_sub_categories
 
-        params = {"per_page": "100", "parent": parent_id}
-        get_sub_categories_response = self.wcapi.get("products/categories",
-                                                     params=params).json()
-
-        remote_sub_categories = []
-        count = 0
-        for item in get_sub_categories_response:
-            remote_sub_categories.append(self.create_remote_category(item))
-            count += 1
-
-        return remote_sub_categories
-
-    def create_remote_category(self, item):
-        #print(json.dumps(item, indent=4, sort_keys=True))
-        category = Category(html.unescape(item['name']), item['id'])
-        category.parent_remote_id = item['parent']
-        if item['image']:
-            category.image_id = item['image']['id']
-        else:
-            category.image_id = None
-        #category.print_category(1)
-
-        return category
+    # def create_remote_category(self, item):
+    #     #print(json.dumps(item, indent=4, sort_keys=True))
+    #     category = Category(html.unescape(item['name']), item['id'])
+    #     category.parent_remote_id = item['parent']
+    #     if item['image']:
+    #         category.image_id = item['image']['id']
+    #     else:
+    #         category.image_id = None
+    #     #category.print_category(1)
+    #
+    #     return category
 
     def get_products(self):
         remote_products = []
