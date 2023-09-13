@@ -128,12 +128,13 @@ def parse_tables(t_list, m_category):
                 if m_category == 'Нержавеющий лист (розница)' and n == 1:
                     table_row.append('т')
                 elif n == 0 and item.text.startswith(tuple('0123456789')):
-                    item = float(item.text.replace(',', '.'))
+                    item = int(item.text.partition(',')[0])
                     item = item + (item / 100 * percent_up)
-                    table_row.append(round(item))
+                    item = (round(item))
+                    table_row.append(item)
                 else:
-                    table_row.append(item.text.replace(',', ' | ').replace(
-                        ';', ' | ').strip())
+                    table_row.append(item.text.replace(',', '|').replace(
+                        ';', '|').replace('   ', ' ').replace('  ', ' ').strip())
 
             length = len(mydata)
             mydata.loc[length] = table_row
@@ -163,28 +164,28 @@ def csv_merger(path, out_filename="res.csv", globmask="*.csv", chunksize=5000,
             need_header = False
 
 
-def transform_data(input_file, output_file):
-    with open(input_file, 'r', encoding='utf-8') as infile, \
-            open(output_file, 'w', encoding='utf-8', newline='') as outfile:
-        reader = csv.reader(infile)
-        writer = csv.writer(outfile)
-        header = []
-        header.append('Категории')
-        header.append('Имя')
-        header.append('Краткое описание')
-        header.append('Базовая цена')
-
-        writer.writerow(header)
-        for i, row in enumerate(reader):
-            if i == 0:
-                continue
-            if row[5] == 'звоните':
-                row[5] = '0'
-            new_row = [f'Каталог > {row[0]} > {row[1]}',
-                       f'{row[1]} {row[2]} | ед.изм.:{row[4]}',
-                       row[3],
-                       row[5]]
-            writer.writerow(new_row)
+# def transform_data(input_file, output_file):
+#     with open(input_file, 'r', encoding='utf-8') as infile, \
+#             open(output_file, 'w', encoding='utf-8', newline='') as outfile:
+#         reader = csv.reader(infile)
+#         writer = csv.writer(outfile)
+#         header = []
+#         header.append('Категории')
+#         header.append('Имя')
+#         header.append('Краткое описание')
+#         header.append('Базовая цена')
+#
+#         writer.writerow(header)
+#         for i, row in enumerate(reader):
+#             if i == 0:
+#                 continue
+#             if row[5] == 'звоните':
+#                 row[5] = '0'
+#             new_row = [f'Каталог > {row[0]} > {row[1]}',
+#                        f'{row[1]} {row[2]}|ед.изм.:{row[4]}',
+#                        row[3],
+#                        row[5]]
+#             writer.writerow(new_row)
 
 
 if __name__ == '__main__':
