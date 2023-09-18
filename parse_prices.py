@@ -37,6 +37,7 @@ def main():
 
     csv_merger(price_dir, "price.csv", globmask="*.csv", chunksize=1000)
     # transform_data('price.csv', 'woo_price.csv')
+    print('Новый прайс сформирован')
 
 
 def prices_folder_delete(prices_folder_path):
@@ -126,7 +127,7 @@ def parse_tables(t_list, m_category):
 
         # фиксируем подкатегории
         sub_category = str(headers[1]).replace('/', '-')
-        sub_category = sub_category.replace(',', ' ')
+        sub_category = sub_category.replace(',', ' ').replace('   ', ' ').replace('  ', ' ').strip()
 
         # меняем названия колонок
         headers[1] = 'Подкатегория'
@@ -153,6 +154,8 @@ def parse_tables(t_list, m_category):
                     item = item + (item / 100 * percent_up)
                     item = (round(item))
                     table_row.append(item)
+                elif item.text == 'звоните':
+                    table_row.append(0)
                 else:
                     table_row.append(item.text.replace(',', '|').replace(
                         ';', '|').replace('   ', ' ').replace('  ', ' ').strip())

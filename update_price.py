@@ -22,7 +22,7 @@ wcapi = API(
 
 def main_load():
     # Вызов функций импорта товаров из CSV-файла
-    update_new_price('test_10.csv')
+    update_new_price('price.csv')
     print('прайс обновлён')
 
 
@@ -56,158 +56,135 @@ def update_new_price(csv_file):
                     old_price = products_data[0]['regular_price']
 
                     # Проверяем, изменилась ли цена товара
-                    if isinstance(new_price, str) and new_price == '':
-                        new_price = 0
-                        # Создаем данные для обновления цены товара
-                        data = {
-                            'regular_price': str(new_price)
-                        }
-
-                        # Обновляем цену товара с найденным product_id
-                        response = wcapi.put(f"products/{product_id}", data)
-
-                        if response.status_code == 200:
-                            print(f"Цена товара '{product_name}' успешно обновлена на {new_price}")
-                        else:
-                            print(f"Не удалось обновить цену товара '{product_name}'. Ошибка: {response.status_code}")
-                    elif float(new_price) != float(old_price):
-
-                        # Создаем данные для обновления цены товара
-                        data = {
-                            'regular_price': str(new_price)
-                        }
-
-                        # Обновляем цену товара с найденным product_id
-                        response = wcapi.put(f"products/{product_id}", data)
-
-                        if response.status_code == 200:
-                            print(f"Цена товара '{product_name}' успешно обновлена на {new_price}")
-                        else:
-                            print(f"Не удалось обновить цену товара '{product_name}'. Ошибка: {response.status_code}")
+                    if has_price_changed(new_price, old_price):
+                        update_product_price(product_id, new_price, product_name)
                     else:
                         print(f"Цена товара '{product_name}' не изменилась. Не требуется обновление.")
                 else:
                     print(f"Товар с именем '{product_name}' не найден.")
-                    category_name = row[subcategory_index]  # ! в CSV есть столбец с названием подкатегории
-                    # Получаем информацию о подкатегории по имени
-                    categories = wcapi.get("products/categories", params={"search": category_name})
-                    if categories.status_code == 200:
-                        categories_data = categories.json()
-                        # Проверяем, что найдена подкатегория с указанным именем
-                        if len(categories_data) > 0:
-                            subcategory_id = categories_data[0]['id']
-                            category_name = row[category_index]  # ! в CSV есть столбец с названием подкатегории
-                            categories = wcapi.get("products/categories", params={"search": category_name})
-                            if categories.status_code == 200:
-                                categories_data = categories.json()
-                                # Проверяем, что найдена хотя бы одна категория с указанным именем
-                                if len(categories_data) > 0:
-                                    category_id = categories_data[0]['id']
-                                    # Создаем данные для нового товара
-                                    new_product_data = {
-                                        'name': product_name,
-                                        'regular_price': str(new_price),
-                                        'categories': [
-                                                        {'id': category_id},
-                                                        {'id': subcategory_id},
-                                                                   ],
-                                    }
-
-                                    # Создаем новый товар
-                                    response = wcapi.post("products", new_product_data)
-
-                                    if response.status_code == 201:
-                                        print(
-                                            f"Создан новый товар '{product_name}' в категории '{category_name}' с ценой {new_price}")
-                                    else:
-                                        print(
-                                            f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
-                        else:
-                            print(f"Подкатегория с именем '{category_name}' не найдена.")
-                            # создаём категорию
-                            category = row[category_index]
-                            subcategory = row[subcategory_index]
-                            # Делаем запрос на проверку существования родительской категории
-                            categories = wcapi.get("products/categories", params={"search": category})
-
-                            if categories.status_code == 200:
-                                categories_data = categories.json()
-
-                                # Проверяем, что найдена родительская категория с указанным именем
-                                if len(categories_data) > 0:
-                                    category_id = categories_data[0]['id']
-                                    # создаём данные для подкатегории
-                                    subcategory_data = {
-                                        'name': subcategory,
-                                        'parent': category_id,
-                                    }
-                                    # создаём подкатегорию
-                                    response = wcapi.post("products/categories/", subcategory_data)
-                                    if response.status_code == 201:
-                                        category_data = response.json()
-                                        subcategory_id = category_data.get("id")
-
-                                    # создаём данные для нового товар с новыми категориями
-                                    new_product_data = {
-                                        'name': product_name,
-                                        'regular_price': str(new_price),
-                                        'categories': [
-                                                {'id': category_id},
-                                                {'id': subcategory_id},
-                                                           ],
-                                    }
-                                    # Создаем новый товар с новыми категориями
-                                    response = wcapi.post("products", new_product_data)
-                                    if response.status_code == 201:
-                                        print(
-                                            f"Создан новый товар '{product_name}' в категории '{category_name}' с ценой {new_price}")
-                                    else:
-                                        print(
-                                            f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
-                                else:
-                                    # если не найдена, то создаём родительскую категорию
-                                    print(f"Родительская категория {category} тоже не найдена")
-                                    # создаём данные для категории
-                                    category_data = {
-                                        'name': category,
-                                        'parent': 0,
-                                    }
-                                    #создаём категорию
-                                    response = wcapi.post("products/categories", category_data)
-                                    if response.status_code == 201:
-                                        category_data = response.json()
-                                        category_id = category_data.get("id")
-                                        # создаём данные для подкатегории
-                                        subcategory_data = {
-                                            'name': subcategory,
-                                            'parent': category_id,
-                                        }
-                                        # создаём подкатегорию
-                                        response = wcapi.post("products/categories/", subcategory_data)
-                                        if response.status_code == 201:
-                                            category_data = response.json()
-                                            subcategory_id = category_data.get("id")
-
-                                        # создаём данные для нового товара с новыми категориями
-                                        new_product_data = {
-                                            'name': product_name,
-                                            'regular_price': str(new_price),
-                                            'categories': [
-                                                {'id': category_id},
-                                                {'id': subcategory_id},
-                                                           ],
-                                        }
-
-                                        # Создаем новый товар с новыми категориями
-                                        response = wcapi.post("products", new_product_data)
-                                        if response.status_code == 201:
-                                            print(
-                                                f"Создан новый товар '{product_name}' в категории '{category_name}' с ценой {new_price}")
-                                        else:
-                                            print(
-                                                f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
+                    sub_category_name = row[subcategory_index]  # ! в CSV есть столбец с названием подкатегории
+                    category_name = row[category_index]  # ! в CSV есть столбец с названием подкатегории
+                    create_new_product(category_name, sub_category_name, row, new_price, product_name)
             else:
                 print(f"Не удалось получить информацию о товаре '{product_name}'. Ошибка: {products.status_code}")
+
+
+def has_price_changed(new_price, old_price):
+    """Проверяет, изменилась ли цена товара"""
+    if isinstance(new_price, str) and new_price == '':
+        new_price = 0
+    if isinstance(old_price, str) and old_price == '':
+        old_price = 0
+    return float(new_price) != float(old_price)
+
+
+def update_product_price(product_id, new_price, product_name):
+    """Обновляет цену товара"""
+    data = {
+        'regular_price': str(new_price)
+    }
+    response = wcapi.put(f"products/{product_id}", data)
+
+    if response.status_code == 200:
+        print(f"Цена товара '{product_name}' успешно обновлена на {new_price}")
+    else:
+        print(f"Не удалось обновить цену товара '{product_name}'. Ошибка: {response.status_code}")
+
+
+def create_new_product(category_name, sub_category_name, row, new_price, product_name):
+    """Создает новый товар"""
+    # Ищем существует ли подкатегория
+    categories = wcapi.get("products/categories", params={"search": sub_category_name})
+    if categories.status_code == 200:
+        categories_data = categories.json()
+        if len(categories_data) > 0:
+            subcategory_id = categories_data[0]['id']
+            # Ищем существует ли категория
+            categories = wcapi.get("products/categories", params={"search": category_name})
+            if categories.status_code == 200:
+                categories_data = categories.json()
+                if len(categories_data) > 0:
+                    category_id = categories_data[0]['id']
+                    new_product_data = {
+                        'name': product_name,
+                        'regular_price': str(new_price),
+                        'categories': [
+                            {'id': category_id},
+                            {'id': subcategory_id},
+                        ],
+                    }
+                    response = wcapi.post("products", new_product_data)
+                    if response.status_code == 201:
+                        print(
+                            f"Создан новый товар '{product_name}' в категории '{category_name}' с ценой {new_price}")
+                    else:
+                        print(
+                            f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
+        else:
+            print(f"Подкатегория с именем '{sub_category_name}' не найдена.")
+            # category = row[category_index]
+            # subcategory = row[subcategory_index]
+            categories = wcapi.get("products/categories", params={"search": category_name})
+            if categories.status_code == 200:
+                categories_data = categories.json()
+                if len(categories_data) > 0:
+                    category_id = categories_data[0]['id']
+                    subcategory_data = {
+                        'name': sub_category_name,
+                        'parent': category_id,
+                    }
+                    response = wcapi.post("products/categories/", subcategory_data)
+                    if response.status_code == 201:
+                        category_data = response.json()
+                        subcategory_id = category_data.get("id")
+                        new_product_data = {
+                            'name': product_name,
+                            'regular_price': str(new_price),
+                            'categories': [
+                                {'id': category_id},
+                                {'id': subcategory_id},
+                            ],
+                        }
+                        response = wcapi.post("products", new_product_data)
+                        if response.status_code == 201:
+                            print(
+                                f"Создан новый товар '{product_name}' в категории '{sub_category_name}' с ценой {new_price}")
+                        else:
+                            print(
+                                f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
+                else:
+                    print(f"Родительская категория {category_name} тоже не найдена")
+                    category_data = {
+                        'name': category_name,
+                        'parent': 0,
+                    }
+                    response = wcapi.post("products/categories", category_data)
+                    if response.status_code == 201:
+                        category_data = response.json()
+                        category_id = category_data.get("id")
+                        subcategory_data = {
+                            'name': sub_category_name,
+                            'parent': category_id,
+                        }
+                        response = wcapi.post("products/categories/", subcategory_data)
+                        if response.status_code == 201:
+                            category_data = response.json()
+                            subcategory_id = category_data.get("id")
+                            new_product_data = {
+                                'name': product_name,
+                                'regular_price': str(new_price),
+                                'categories': [
+                                    {'id': category_id},
+                                    {'id': subcategory_id},
+                                ],
+                            }
+                            response = wcapi.post("products", new_product_data)
+                            if response.status_code == 201:
+                                print(
+                                    f"Создан новый товар '{product_name}' в категории '{sub_category_name}' с ценой {new_price}")
+                            else:
+                                print(
+                                    f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
 
 
 if __name__ == '__main__':
