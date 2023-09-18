@@ -56,7 +56,21 @@ def update_new_price(csv_file):
                     old_price = products_data[0]['regular_price']
 
                     # Проверяем, изменилась ли цена товара
-                    if float(new_price) != float(old_price):
+                    if isinstance(new_price, str) and new_price == '':
+                        new_price = 0
+                        # Создаем данные для обновления цены товара
+                        data = {
+                            'regular_price': str(new_price)
+                        }
+
+                        # Обновляем цену товара с найденным product_id
+                        response = wcapi.put(f"products/{product_id}", data)
+
+                        if response.status_code == 200:
+                            print(f"Цена товара '{product_name}' успешно обновлена на {new_price}")
+                        else:
+                            print(f"Не удалось обновить цену товара '{product_name}'. Ошибка: {response.status_code}")
+                    elif float(new_price) != float(old_price):
 
                         # Создаем данные для обновления цены товара
                         data = {

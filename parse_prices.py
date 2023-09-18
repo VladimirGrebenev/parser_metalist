@@ -5,6 +5,7 @@ import requests
 import pandas as pd
 import os
 from pathlib import Path
+import shutil
 import csv
 
 
@@ -19,19 +20,39 @@ percent_up = 1.6
 
 def main():
     """Главная функция запуска сборщика прайсов"""
-    price_links_dict = get_price_links(price_url, price_pattern)
-    for title, link in price_links_dict.items():
-        tables_list = parse_price_link(link)
-        parse_tables(tables_list, title)
 
     # путь до рабочей директории
     basedir = os.path.abspath(os.getcwd())
     # путь до папки с прайсами
     price_dir = os.path.abspath(os.path.join(basedir, './price'))
 
+    # удаляем предыдущие прайсы, чтобы файл не разрастался
+    prices_folder_delete(price_dir)
+
+    price_links_dict = get_price_links(price_url, price_pattern)
+    for title, link in price_links_dict.items():
+        tables_list = parse_price_link(link)
+        parse_tables(tables_list, title)
+
+
     csv_merger(price_dir, "price.csv", globmask="*.csv", chunksize=1000)
     # transform_data('price.csv', 'woo_price.csv')
 
+
+def prices_folder_delete(prices_folder_path):
+    if os.path.exists(prices_folder_path):
+        try:
+            shutil.rmtree(prices_folder_path)
+            print(f"Папка '{prices_folder_path}' и файлы успешно удалены.")
+        except OSError as error:
+            print(f"Ошибка при удалении папки '{prices_folder_path}': {error}")
+    else:
+        print(f"Папка '{prices_folder_path}' ещё не создана")
+    if os.path.exists('price.csv'):
+        os.remove('price.csv')
+        print("Файл 'price.csv' успешно удален.")
+    else:
+        print("Файл 'price.csv' не существует в текущей директории.")
 
 def get_price_links(prc_url, prc_ptn):
     """

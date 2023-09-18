@@ -20,7 +20,7 @@ wcapi = API(
 # запускающая функция
 def main_load():
     # Вызов функций импорта товаров из CSV-файла
-    to_load = import_products_from_csv('test_10.csv')
+    to_load = import_products_from_csv('price.csv')
     print('список словарей товаров подготовлен')
     # отправка в базу пакетов 100 записей
     api_batch_sending(to_load)
@@ -83,7 +83,7 @@ def import_products_from_csv(csv_file):
             category = row[category_index]
             subcategory = row[subcategory_index]
             title = f'{row[subcategory_index]} | {row[title_index]} | {row[short_description_index]} | {row[unit_index]}'
-            price = float(row[price_index])
+            price = (row[price_index])
 
 
             # Создание категории, если ее нет
