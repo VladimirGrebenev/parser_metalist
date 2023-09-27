@@ -33,7 +33,7 @@ price_pattern = 'https://mc.ru/prices/'
 percent_up = 1.6
 
 
-def main():
+def main_parse():
     """Главная функция запуска сборщика прайсов"""
 
     # logger.info("Сборщик прайсов запущен")
@@ -204,4 +204,4 @@ def csv_merger(path, out_filename="res.csv", globmask="*.csv", chunksize=5000,
             need_header = False
 
 if __name__ == '__main__':
-    main()
+    main_parse()
