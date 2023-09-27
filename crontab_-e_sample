@@ -1,0 +1,2 @@
+0 20 * * * python /path/to/parse_price.py
+0 21 * * * python /path/to/update_price.py
