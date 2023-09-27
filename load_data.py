@@ -19,75 +19,11 @@ wcapi = API(
 
 # запускающая функция
 def main_load():
-    # # очистка каталога
-    # delete_all_categories()
-    # delete_all_products()
-    # print('каталог очищен')
-
     # Вызов функций импорта товаров из CSV-файла
-    to_load = import_products_from_csv('test.csv')
+    to_load = import_products_from_csv('price.csv')
     print('список словарей товаров подготовлен')
     # отправка в базу пакетов 100 записей
     api_batch_sending(to_load)
-
-
-# def delete_all_categories():
-#     """функция удаления всех категорий"""
-#     all_categories = wcapi.get("products/categories").json()
-#     categories_ids = []
-#
-#     for category in all_categories:
-#         categories_ids.append(category['id'])
-#
-#     divided_cat_ids = divide_list(categories_ids, 100)
-#
-#     for sublist in divided_cat_ids:
-#         data_to_del = {
-#             "delete": sublist
-#         }
-#
-#         wcapi.post("products/categories/batch", data_to_del).json()
-
-
-def delete_all_categories():
-    count = 0
-    while True:
-        params = {"per_page": "100"}
-        response_get = wcapi.get("products/categories", params=params).json()
-        categories_to_delete = [d['id'] for d in response_get]
-        data = {'delete': categories_to_delete}
-        response_delete = wcapi.post("products/categories/batch", data).json()
-        count += len(categories_to_delete)
-        if len(categories_to_delete) < 100:
-            break
-    print(f'Deleted categories: {str(count)}')
-
-
-def force_delete_all_products():
-    """функция удаления всех товаров"""
-    params = {"per_page": "100"}
-    response_get = wcapi.get("products", params=params).json()
-    products_to_delete = [d['id'] for d in response_get]
-    params = {"force": "True"}
-
-    for p in products_to_delete:
-        response_delete = wcapi.delete(f'products/{str(p)}', params=params).json()
-
-
-def delete_all_products():
-    count = 0
-    while True:
-        params = {"per_page": "100"}
-        response_get = wcapi.get("products", params=params).json()
-
-        products_to_delete = [d['id'] for d in response_get]
-        data = {'delete': products_to_delete}
-        response_delete = wcapi.post("products/batch", data).json()
-        count += len(products_to_delete)
-        if len(products_to_delete) < 100:
-            break
-
-    print(f"Deleted products: {str(count)}")
 
 
 def divide_list(lst, n):
@@ -146,9 +82,9 @@ def import_products_from_csv(csv_file):
             # Индексирование данных из CSV
             category = row[category_index]
             subcategory = row[subcategory_index]
-            title = f'{row[subcategory_index]} | {row[title_index]} | ед.изм.: {row[unit_index]}'
-            short_description = row[short_description_index]
-            price = row[price_index]
+            title = f'{row[subcategory_index]} | {row[title_index]} | {row[short_description_index]} | {row[unit_index]}'
+            price = (row[price_index])
+
 
             # Создание категории, если ее нет
             if category not in category_mapping:
@@ -178,7 +114,6 @@ def import_products_from_csv(csv_file):
             # Создание товара в WooCommerce
             data_product = {
                 'name': title,
-                'short_description': short_description,
                 'regular_price': price,
                 'categories': [
                     {

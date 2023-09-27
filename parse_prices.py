@@ -5,8 +5,24 @@ import requests
 import pandas as pd
 import os
 from pathlib import Path
-import csv
+import shutil
+import logging
 
+
+# Create a logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create a file handler and set the log level
+file_handler = logging.FileHandler('log_parse_price.txt', encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+
+# Create a formatter and add it to the file handler
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
 
 
 # ссылка на страницу со ссылками на прайсы
@@ -19,19 +35,41 @@ percent_up = 1.6
 
 def main():
     """Главная функция запуска сборщика прайсов"""
-    price_links_dict = get_price_links(price_url, price_pattern)
-    for title, link in price_links_dict.items():
-        tables_list = parse_price_link(link)
-        parse_tables(tables_list, title)
 
+    # logger.info("Сборщик прайсов запущен")
     # путь до рабочей директории
     basedir = os.path.abspath(os.getcwd())
     # путь до папки с прайсами
     price_dir = os.path.abspath(os.path.join(basedir, './price'))
 
+    # удаляем предыдущие прайсы, чтобы файл не разрастался
+    prices_folder_delete(price_dir)
+
+    price_links_dict = get_price_links(price_url, price_pattern)
+    for title, link in price_links_dict.items():
+        tables_list = parse_price_link(link)
+        parse_tables(tables_list, title)
+
+
     csv_merger(price_dir, "price.csv", globmask="*.csv", chunksize=1000)
     # transform_data('price.csv', 'woo_price.csv')
+    logger.info("Новый прайс сформирован")
 
+
+def prices_folder_delete(prices_folder_path):
+    if os.path.exists(prices_folder_path):
+        try:
+            shutil.rmtree(prices_folder_path)
+            # logger.info(f"Папка '{prices_folder_path}' и файлы успешно удалены.")
+        except OSError as error:
+            logger.info(f"Ошибка при удалении папки '{prices_folder_path}': {error}")
+    else:
+        logger.info(f"Папка '{prices_folder_path}' ещё не создана")
+    if os.path.exists('price.csv'):
+        os.remove('price.csv')
+        # logger.info("Файл 'price.csv' успешно удален.")
+    else:
+        logger.info("Файл 'price.csv' не существует в текущей директории.")
 
 def get_price_links(prc_url, prc_ptn):
     """
@@ -105,7 +143,7 @@ def parse_tables(t_list, m_category):
 
         # фиксируем подкатегории
         sub_category = str(headers[1]).replace('/', '-')
-        sub_category = sub_category.replace(',', ' ')
+        sub_category = sub_category.replace(',', ' ').replace('   ', ' ').replace('  ', ' ').strip()
 
         # меняем названия колонок
         headers[1] = 'Подкатегория'
@@ -128,12 +166,15 @@ def parse_tables(t_list, m_category):
                 if m_category == 'Нержавеющий лист (розница)' and n == 1:
                     table_row.append('т')
                 elif n == 0 and item.text.startswith(tuple('0123456789')):
-                    item = float(item.text.replace(',', '.'))
+                    item = int(item.text.partition(',')[0])
                     item = item + (item / 100 * percent_up)
-                    table_row.append(round(item))
+                    item = (round(item))
+                    table_row.append(item)
+                elif item.text == 'звоните':
+                    table_row.append(0)
                 else:
-                    table_row.append(item.text.replace(',', ' | ').replace(
-                        ';', ' | ').strip())
+                    table_row.append(item.text.replace(',', '|').replace(
+                        ';', '|').replace('   ', ' ').replace('  ', ' ').strip())
 
             length = len(mydata)
             mydata.loc[length] = table_row
@@ -161,31 +202,6 @@ def csv_merger(path, out_filename="res.csv", globmask="*.csv", chunksize=5000,
             chunk.to_csv(out_filename, index=False, header=need_header,
                          mode="a")
             need_header = False
-
-
-def transform_data(input_file, output_file):
-    with open(input_file, 'r', encoding='utf-8') as infile, \
-            open(output_file, 'w', encoding='utf-8', newline='') as outfile:
-        reader = csv.reader(infile)
-        writer = csv.writer(outfile)
-        header = []
-        header.append('Категории')
-        header.append('Имя')
-        header.append('Краткое описание')
-        header.append('Базовая цена')
-
-        writer.writerow(header)
-        for i, row in enumerate(reader):
-            if i == 0:
-                continue
-            if row[5] == 'звоните':
-                row[5] = '0'
-            new_row = [f'Каталог > {row[0]} > {row[1]}',
-                       f'{row[1]} {row[2]} | ед.изм.:{row[4]}',
-                       row[3],
-                       row[5]]
-            writer.writerow(new_row)
-
 
 if __name__ == '__main__':
     main()
