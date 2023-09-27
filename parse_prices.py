@@ -6,8 +6,23 @@ import pandas as pd
 import os
 from pathlib import Path
 import shutil
-import csv
+import logging
 
+
+# Create a logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create a file handler and set the log level
+file_handler = logging.FileHandler('log_parse_price.txt', encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+
+# Create a formatter and add it to the file handler
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
 
 
 # ссылка на страницу со ссылками на прайсы
@@ -21,6 +36,7 @@ percent_up = 1.6
 def main():
     """Главная функция запуска сборщика прайсов"""
 
+    # logger.info("Сборщик прайсов запущен")
     # путь до рабочей директории
     basedir = os.path.abspath(os.getcwd())
     # путь до папки с прайсами
@@ -37,23 +53,23 @@ def main():
 
     csv_merger(price_dir, "price.csv", globmask="*.csv", chunksize=1000)
     # transform_data('price.csv', 'woo_price.csv')
-    print('Новый прайс сформирован')
+    logger.info("Новый прайс сформирован")
 
 
 def prices_folder_delete(prices_folder_path):
     if os.path.exists(prices_folder_path):
         try:
             shutil.rmtree(prices_folder_path)
-            print(f"Папка '{prices_folder_path}' и файлы успешно удалены.")
+            # logger.info(f"Папка '{prices_folder_path}' и файлы успешно удалены.")
         except OSError as error:
-            print(f"Ошибка при удалении папки '{prices_folder_path}': {error}")
+            logger.info(f"Ошибка при удалении папки '{prices_folder_path}': {error}")
     else:
-        print(f"Папка '{prices_folder_path}' ещё не создана")
+        logger.info(f"Папка '{prices_folder_path}' ещё не создана")
     if os.path.exists('price.csv'):
         os.remove('price.csv')
-        print("Файл 'price.csv' успешно удален.")
+        # logger.info("Файл 'price.csv' успешно удален.")
     else:
-        print("Файл 'price.csv' не существует в текущей директории.")
+        logger.info("Файл 'price.csv' не существует в текущей директории.")
 
 def get_price_links(prc_url, prc_ptn):
     """
@@ -186,31 +202,6 @@ def csv_merger(path, out_filename="res.csv", globmask="*.csv", chunksize=5000,
             chunk.to_csv(out_filename, index=False, header=need_header,
                          mode="a")
             need_header = False
-
-
-# def transform_data(input_file, output_file):
-#     with open(input_file, 'r', encoding='utf-8') as infile, \
-#             open(output_file, 'w', encoding='utf-8', newline='') as outfile:
-#         reader = csv.reader(infile)
-#         writer = csv.writer(outfile)
-#         header = []
-#         header.append('Категории')
-#         header.append('Имя')
-#         header.append('Краткое описание')
-#         header.append('Базовая цена')
-#
-#         writer.writerow(header)
-#         for i, row in enumerate(reader):
-#             if i == 0:
-#                 continue
-#             if row[5] == 'звоните':
-#                 row[5] = '0'
-#             new_row = [f'Каталог > {row[0]} > {row[1]}',
-#                        f'{row[1]} {row[2]}|ед.изм.:{row[4]}',
-#                        row[3],
-#                        row[5]]
-#             writer.writerow(new_row)
-
 
 if __name__ == '__main__':
     main()

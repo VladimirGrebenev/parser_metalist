@@ -1,10 +1,24 @@
 import csv
 import time
-import requests
 from woocommerce import API
-from pprint import pprint
+import logging
 
 from env import CONS_SEC, CONS_KEY, SITE_URL_UPLOAD
+
+# Create a logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Create a file handler and set the log level and encoding
+file_handler = logging.FileHandler('log_update_price.txt', encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+
+# Create a formatter and add it to the file handler
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
 
 # url для подключения к api
 SITE_URL = SITE_URL_UPLOAD
@@ -21,9 +35,10 @@ wcapi = API(
 
 
 def main_load():
+    logger.info('обновление прайса запущено')
     # Вызов функций импорта товаров из CSV-файла
     update_new_price('price.csv')
-    print('прайс обновлён')
+    logger.info('прайс обновлён')
 
 
 def update_new_price(csv_file):
@@ -58,15 +73,15 @@ def update_new_price(csv_file):
                     # Проверяем, изменилась ли цена товара
                     if has_price_changed(new_price, old_price):
                         update_product_price(product_id, new_price, product_name)
-                    else:
-                        print(f"Цена товара '{product_name}' не изменилась. Не требуется обновление.")
+                    # else:
+                    #     print(f"Цена товара '{product_name}' не изменилась. Не требуется обновление.")
                 else:
-                    print(f"Товар с именем '{product_name}' не найден.")
+                    # print(f"Товар с именем '{product_name}' не найден.")
                     sub_category_name = row[subcategory_index]  # ! в CSV есть столбец с названием подкатегории
                     category_name = row[category_index]  # ! в CSV есть столбец с названием подкатегории
                     create_new_product(category_name, sub_category_name, row, new_price, product_name)
             else:
-                print(f"Не удалось получить информацию о товаре '{product_name}'. Ошибка: {products.status_code}")
+                logger.info(f"Не удалось получить информацию о товаре '{product_name}'. Ошибка: {products.status_code}")
 
 
 def has_price_changed(new_price, old_price):
@@ -88,7 +103,7 @@ def update_product_price(product_id, new_price, product_name):
     if response.status_code == 200:
         print(f"Цена товара '{product_name}' успешно обновлена на {new_price}")
     else:
-        print(f"Не удалось обновить цену товара '{product_name}'. Ошибка: {response.status_code}")
+        logger.info(f"Не удалось обновить цену товара '{product_name}'. Ошибка: {response.status_code}")
 
 
 def create_new_product(category_name, sub_category_name, row, new_price, product_name):
@@ -118,12 +133,10 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
                         print(
                             f"Создан новый товар '{product_name}' в категории '{category_name}' с ценой {new_price}")
                     else:
-                        print(
+                        logger.info(
                             f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
         else:
-            print(f"Подкатегория с именем '{sub_category_name}' не найдена.")
-            # category = row[category_index]
-            # subcategory = row[subcategory_index]
+            # print(f"Подкатегория с именем '{sub_category_name}' не найдена.")
             categories = wcapi.get("products/categories", params={"search": category_name})
             if categories.status_code == 200:
                 categories_data = categories.json()
@@ -150,10 +163,10 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
                             print(
                                 f"Создан новый товар '{product_name}' в категории '{sub_category_name}' с ценой {new_price}")
                         else:
-                            print(
+                            logger.info(
                                 f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
                 else:
-                    print(f"Родительская категория {category_name} тоже не найдена")
+                    # print(f"Родительская категория {category_name} тоже не найдена")
                     category_data = {
                         'name': category_name,
                         'parent': 0,
@@ -183,7 +196,7 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
                                 print(
                                     f"Создан новый товар '{product_name}' в категории '{sub_category_name}' с ценой {new_price}")
                             else:
-                                print(
+                                logger.info(
                                     f"Не удалось создать новый товар '{product_name}'. Ошибка: {response.status_code}")
 
 
