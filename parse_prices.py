@@ -158,7 +158,14 @@ def parse_tables(t_list, m_category):
         for d in table.find_all('tr')[2:]:
             row_data = d.find_all('td')
             table_row = []
-            table_row.append(m_category)
+            if m_category == 'Балашихинская металлобаза':
+                table_row.append('Металлобаза №1')
+            elif m_category == 'Газгольдерная металлобаза':
+                table_row.append('Металлобаза №2')
+            elif m_category == 'Ногинская металлобаза':
+                table_row.append('Металлобаза №3')
+            else:
+                table_row.append(m_category)
             table_row.append(sub_category)
             n = len(row_data)
             for item in row_data:

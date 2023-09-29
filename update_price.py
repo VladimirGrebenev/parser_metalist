@@ -101,7 +101,7 @@ def update_product_price(product_id, new_price, product_name):
     response = wcapi.put(f"products/{product_id}", data)
 
     if response.status_code == 200:
-        print(f"Цена товара '{product_name}' успешно обновлена на {new_price}")
+        logger.info(f"Цена товара '{product_name}' успешно обновлена на {new_price}")
     else:
         logger.info(f"Не удалось обновить цену товара '{product_name}'. Ошибка: {response.status_code}")
 
@@ -130,7 +130,7 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
                     }
                     response = wcapi.post("products", new_product_data)
                     if response.status_code == 201:
-                        print(
+                        logger.info(
                             f"Создан новый товар '{product_name}' в категории '{category_name}' с ценой {new_price}")
                     else:
                         logger.info(
@@ -160,7 +160,7 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
                         }
                         response = wcapi.post("products", new_product_data)
                         if response.status_code == 201:
-                            print(
+                            logger.info(
                                 f"Создан новый товар '{product_name}' в категории '{sub_category_name}' с ценой {new_price}")
                         else:
                             logger.info(
@@ -193,7 +193,7 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
                             }
                             response = wcapi.post("products", new_product_data)
                             if response.status_code == 201:
-                                print(
+                                logger.info(
                                     f"Создан новый товар '{product_name}' в категории '{sub_category_name}' с ценой {new_price}")
                             else:
                                 logger.info(
