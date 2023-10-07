@@ -32,7 +32,6 @@ price_pattern = 'https://mc.ru/prices/'
 # процент на который увеличиваем цены в прайсе
 percent_up = 1.6
 
-
 def main_parse():
     """Главная функция запуска сборщика прайсов"""
 
@@ -95,8 +94,10 @@ def get_price_links(prc_url, prc_ptn):
             title_links.append(title.text.replace('XLS\nHtml\n', '').strip())
 
     for link in soup_links:
-        if link.get('href') and link.get('href').startswith(prc_ptn) \
-                and link.get('href')[-4:] == '.htm':
+        href = link.get('href')
+        if (href and href.startswith(prc_ptn) and href[-4:] == '.htm' and
+                'list_nerzh_sht' not in href and 'noginsk' not in href and
+                'balash' not in href and 'price_gaz' not in href):
             prc_links.append(link.get('href'))
 
     price_links_dict = dict(zip(title_links, prc_links))
