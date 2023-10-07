@@ -21,13 +21,13 @@ wcapi = API(
 def main_load():
     # Вызов функций импорта товаров из CSV-файла
     to_load = import_products_from_csv('price.csv')
-    print('список словарей товаров подготовлен')
+    print('список словарей товаров подготовлен, начинаю загрузку')
     # отправка в базу пакетов 100 записей
     api_batch_sending(to_load)
 
 
 def divide_list(lst, n):
-    """функция разделения списка на списки по нужному количеству объектов"""
+    """Функция разделения списка на списки по нужному количеству объектов"""
     divided_lists = []
     for i in range(0, len(lst), n):
         divided_lists.append(lst[i:i + n])
@@ -35,7 +35,8 @@ def divide_list(lst, n):
 
 
 def api_batch_sending(products):
-    """функция отправки пакетов, принимает на вход список с словарями товаров"""
+    """Функция отправки пакетов, принимает на вход список с словарями
+    товаров"""
 
     # разделяем список с товарами на пакеты по 100
     divided_products = divide_list(products, 100)
@@ -59,7 +60,8 @@ def api_batch_sending(products):
 
 
 def import_products_from_csv(csv_file):
-    """функция подготовки списка словарей товаров для инпорта через API из файла CSV"""
+    """Функция подготовки списка словарей товаров для инпорта через API из
+    файла CSV"""
 
     with open(csv_file, 'r', encoding='utf-8') as file:
         csv_data = csv.reader(file)
