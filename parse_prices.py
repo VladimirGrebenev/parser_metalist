@@ -90,8 +90,15 @@ def get_price_links(prc_url, prc_ptn):
     title_links = []
 
     for title in soup_links_titles:
-        if title.text:
-            title_links.append(title.text.replace('XLS\nHtml\n', '').strip())
+        c_t = title.text
+        if (c_t and 'Метизы и метсырье' not in c_t and 'Крепеж' not
+                in c_t and 'Инженерные системы' not in c_t
+                and 'Нержавеющий лист (розница)' not in c_t
+                and 'Балашихинская металлобаза' not in c_t
+                and 'Ногинская металлобаза' not in c_t
+                and 'Газгольдерная металлобаза' not in c_t
+                and 'Профнастил' not in c_t):
+            title_links.append(c_t.replace('XLS\nHtml\n', '').strip())
 
     for link in soup_links:
         href = link.get('href')
@@ -99,8 +106,11 @@ def get_price_links(prc_url, prc_ptn):
                 'list_nerzh_sht' not in href and 'noginsk' not in href and
                 'balash' not in href and 'price_gaz' not in href and
                 'engineering' not in href and 'krepezh' not in href and
-                'metizy' not in href):
+                'metizy' not in href and 'profnastil' not in href):
             prc_links.append(link.get('href'))
+
+    print(prc_links)
+    print(title_links)
 
     price_links_dict = dict(zip(title_links, prc_links))
 
