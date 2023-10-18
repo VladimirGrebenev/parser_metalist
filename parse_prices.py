@@ -97,7 +97,9 @@ def get_price_links(prc_url, prc_ptn):
         href = link.get('href')
         if (href and href.startswith(prc_ptn) and href[-4:] == '.htm' and
                 'list_nerzh_sht' not in href and 'noginsk' not in href and
-                'balash' not in href and 'price_gaz' not in href):
+                'balash' not in href and 'price_gaz' not in href and
+                'engineering' not in href and 'krepezh' not in href and
+                'metizy' not in href):
             prc_links.append(link.get('href'))
 
     price_links_dict = dict(zip(title_links, prc_links))
