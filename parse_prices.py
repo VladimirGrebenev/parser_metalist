@@ -194,7 +194,7 @@ def parse_tables(t_list, m_category):
                     table_row.append(0)
                 else:
                     table_row.append(item.text.replace(',', '|').replace(
-                        ';', '|').replace('   ', ' ').replace('  ', ' ').strip())
+                        ';', '|').replace('   ', ' ').replace('x', 'Х').replace('  ', ' ').strip())
 
             length = len(mydata)
             mydata.loc[length] = table_row
