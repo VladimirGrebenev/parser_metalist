@@ -40,6 +40,19 @@ def main_load():
     update_new_price('price.csv')
     logger.info('прайс обновлён')
 
+def exact_match_category(cat_name, categories_json):
+    """проверка точного совпадения категории в списке категорий"""
+    exact_category = None
+    for category in categories_json.json():
+        if category["name"] == cat_name:
+            exact_category = category
+
+    if exact_category == None:
+        return False
+    else:
+        return exact_category
+
+
 
 def update_new_price(csv_file):
     """функция обновления цены на сайте через API из файла CSV"""
@@ -108,13 +121,14 @@ def update_product_price(product_id, new_price, product_name):
 
 def create_new_product(category_name, sub_category_name, row, new_price, product_name):
     """Создает новый товар"""
-    # Ищем существует ли подкатегория
+    # Ищем, существует ли подкатегория
     categories = wcapi.get("products/categories", params={"search": sub_category_name})
-    if categories.status_code == 200:
+    if categories.status_code == 200 and exact_match_category(
+            sub_category_name, categories):
         categories_data = categories.json()
         if len(categories_data) > 0:
             subcategory_id = categories_data[0]['id']
-            # Ищем существует ли категория
+            # Ищем, существует ли категория
             categories = wcapi.get("products/categories", params={"search": category_name})
             if categories.status_code == 200:
                 categories_data = categories.json()
@@ -138,7 +152,8 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
         else:
             # print(f"Подкатегория с именем '{sub_category_name}' не найдена.")
             categories = wcapi.get("products/categories", params={"search": category_name})
-            if categories.status_code == 200:
+            if categories.status_code == 200 and exact_match_category(
+                    category_name, categories):
                 categories_data = categories.json()
                 if len(categories_data) > 0:
                     category_id = categories_data[0]['id']
