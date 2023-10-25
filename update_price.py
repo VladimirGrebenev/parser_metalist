@@ -123,10 +123,10 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
     """Создает новый товар"""
     # Ищем, существует ли подкатегория
     categories = wcapi.get("products/categories", params={"search": sub_category_name})
-    if categories.status_code == 200 and exact_match_category(
-            sub_category_name, categories):
+    if categories.status_code == 200:
         categories_data = categories.json()
-        if len(categories_data) > 0:
+        if len(categories_data) > 0 and exact_match_category(
+            sub_category_name, categories):
             subcategory_id = categories_data[0]['id']
             # Ищем, существует ли категория
             categories = wcapi.get("products/categories", params={"search": category_name})
@@ -152,8 +152,7 @@ def create_new_product(category_name, sub_category_name, row, new_price, product
         else:
             # print(f"Подкатегория с именем '{sub_category_name}' не найдена.")
             categories = wcapi.get("products/categories", params={"search": category_name})
-            if categories.status_code == 200 and exact_match_category(
-                    category_name, categories):
+            if categories.status_code == 200:
                 categories_data = categories.json()
                 if len(categories_data) > 0:
                     category_id = categories_data[0]['id']
